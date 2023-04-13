@@ -4,22 +4,29 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }: flake-utils.lib.eachDefaultSystem (system:
-    let
-      pkgs = import nixpkgs { inherit system; };
-    in
-    {
-      devShells.default = pkgs.mkShell {
-        packages = with pkgs; [
-          rustup
-          clang
-          protobuf
-          gnumake
-          rustfmt
-        ];
-        shellHook = ''
-          export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
-        '';
-      };
-    });
+  outputs = { self, nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        isDarwin = pkgs.lib.hasSuffix "darwin" system;
+      in
+      {
+        devShells.default =
+          pkgs.mkShell {
+            packages = with pkgs; [ protobuf llvm rust ] ++
+              (if isDarwin
+              then with pkgs.darwin.apple_sdk; [ frameworks.SystemConfiguration Libsystem libcxx pkgs.darwin.apple_sdk.CLTools_Executables ]
+              else [ ]);
+            buildInputs = with pkgs; [ libclang ];
+            LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+            HOST_CXXFLAGS =
+              if isDarwin
+              then "-I ${pkgs.darwin.apple_sdk.CLTools_Executables}/usr/include/c++/v1 -I ${pkgs.darwin.apple_sdk.CLTools_Executables}/usr/include"
+              else "";
+            BINDGEN_EXTRA_CLANG_ARGS = with pkgs;
+              if isDarwin
+              then "-isystem ${darwin.apple_sdk.Libsystem}/include"
+              else "-isystem ${libclang.lib}/lib/clang/${lib.getVersion libclang}/include";
+          };
+      });
 }
