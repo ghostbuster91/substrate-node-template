@@ -17,7 +17,7 @@
               (if isDarwin
               then with pkgs.darwin.apple_sdk; [ frameworks.SystemConfiguration Libsystem libcxx pkgs.darwin.apple_sdk.CLTools_Executables ]
               else [ ]);
-            buildInputs = with pkgs; [ libclang ];
+            # buildInputs = with pkgs; [ libclang ];
             LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
             HOST_CXXFLAGS =
               if isDarwin
