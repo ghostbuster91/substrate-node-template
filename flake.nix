@@ -13,7 +13,7 @@
       {
         devShells.default =
           pkgs.mkShell {
-            packages = [ pkgs.protobuf pkgs.llvm pkgs.rustup pkgs.rustc ];
+            packages = [ pkgs.protobuf pkgs.llvm pkgs.rustup ];
             buildInputs = with pkgs; [ libclang ];
             LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 
