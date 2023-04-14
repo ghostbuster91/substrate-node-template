@@ -13,12 +13,21 @@
       {
         devShells.default =
           pkgs.mkShell {
-            packages = [ pkgs.protobuf pkgs.llvm pkgs.rustup ];
+            packages = with pkgs; [ protobuf llvm rustup ] ++
+              (if isDarwin
+              then with pkgs.darwin.apple_sdk; [ frameworks.SystemConfiguration Libsystem libcxx pkgs.darwin.apple_sdk.CLTools_Executables ]
+              else [ ]);
             buildInputs = with pkgs; [ libclang ];
             LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-
+            HOST_CXXFLAGS =
+              if isDarwin
+              then "-I ${pkgs.darwin.apple_sdk.CLTools_Executables}/usr/include/c++/v1 -I ${pkgs.darwin.apple_sdk.CLTools_Executables}/usr/include"
+              else "";
             BINDGEN_EXTRA_CLANG_ARGS = with pkgs;
-              "-isystem ${libclang.lib}/lib/clang/${lib.getVersion libclang}/include";
+              if isDarwin
+              then "-isystem ${darwin.apple_sdk.Libsystem}/include"
+              else "-isystem ${libclang.lib}/lib/clang/${lib.getVersion libclang}/include";
+
             shellHook = ''
               rustup install 1.68.0
               rustup default 1.68.0
